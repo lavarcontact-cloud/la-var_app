@@ -145,7 +145,7 @@ export function FeedView() {
           <Slide key={p.id} post={p} index={i} total={items.length} active={i === active} near={Math.abs(i - active) <= 1} reduced={reduced} onComments={() => setComments(p)} />
         ))}
         {items && items.length > 0 && done && (
-          <section className="slide flex items-center justify-center px-6 text-center" aria-label="Fin du fil">
+          <section role="article" className="slide flex items-center justify-center px-6 text-center" aria-label="Fin du fil">
             <div>
               <p className="t-display text-4xl">Vous êtes à jour.</p>
               <p className="mt-2 text-[var(--color-muted)]">Revenez plus tard, ou partagez ce que vous savez.</p>
@@ -270,7 +270,7 @@ function TextCard({ post }: { post: FeedPost }) {
 
 function SlideSkeleton() {
   return (
-    <div className="slide" aria-label="Chargement">
+    <div role="article" className="slide" aria-label="Chargement">
       <div className="skeleton absolute inset-0" />
       <div className="absolute bottom-[calc(var(--nav-h)+40px)] left-4 right-20 space-y-3">
         <div className="skeleton h-5 w-40 rounded" />
@@ -283,7 +283,7 @@ function SlideSkeleton() {
 
 export function EmptyState({ title, text, action }: { title: string; text: string; action?: React.ReactNode }) {
   return (
-    <section className="slide flex items-center justify-center px-6 text-center">
+    <section role="article" className="slide flex items-center justify-center px-6 text-center">
       <div className="max-w-sm">
         <p className="t-display text-4xl">{title}</p>
         <p className="mt-3 text-[var(--color-muted)]">{text}</p>

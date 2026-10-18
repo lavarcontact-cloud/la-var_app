@@ -161,7 +161,7 @@ export default function PublishPage() {
           <legend className="mb-2 text-sm font-semibold">Rubrique</legend>
           <div className="flex flex-wrap gap-2">
             {CATEGORIES.map((c) => (
-              <label key={c.value} className="chip cursor-pointer" aria-checked={category === c.value}>
+              <label key={c.value} className="chip cursor-pointer">
                 <input type="radio" name="cat" className="sr-only" checked={category === c.value} onChange={() => setCategory(c.value)} />
                 {c.label}
               </label>
@@ -172,7 +172,7 @@ export default function PublishPage() {
           <legend className="mb-2 text-sm font-semibold">Scène</legend>
           <div className="flex flex-wrap gap-2">
             {SCOPES.map((s) => (
-              <label key={s.value} className="chip cursor-pointer" aria-checked={scope === s.value}>
+              <label key={s.value} className="chip cursor-pointer">
                 <input type="radio" name="scope" className="sr-only" checked={scope === s.value} onChange={() => setScope(s.value)} />
                 {s.label}
               </label>

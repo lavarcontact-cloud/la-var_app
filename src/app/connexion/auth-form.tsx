@@ -86,7 +86,7 @@ export function AuthForm() {
     <Shell>
       <div role="tablist" className="mb-5 grid grid-cols-2 gap-2">
         {(["connexion", "inscription"] as const).map((m) => (
-          <button key={m} role="tab" aria-selected={mode === m} type="button" onClick={() => { setMode(m); setError(""); }} className="chip justify-center" aria-pressed={mode === m}>
+          <button key={m} role="tab" aria-selected={mode === m} type="button" onClick={() => { setMode(m); setError(""); }} className="chip justify-center">
             {m === "connexion" ? "Se connecter" : "Créer un compte"}
           </button>
         ))}

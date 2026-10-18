@@ -188,7 +188,9 @@ video {
 }
 .chip[aria-pressed="true"],
 .chip[aria-current="page"],
-.chip[aria-checked="true"] {
+.chip[aria-checked="true"],
+.chip[aria-selected="true"],
+.chip:has(input:checked) {
   border-color: var(--color-red);
   background: var(--color-red);
   color: #fff;
@@ -323,4 +325,8 @@ video {
   height: 1px;
   overflow: hidden;
   clip: rect(0 0 0 0);
+}
+.chip:has(input:focus-visible) {
+  outline: 2px solid var(--color-paper);
+  outline-offset: 2px;
 }
