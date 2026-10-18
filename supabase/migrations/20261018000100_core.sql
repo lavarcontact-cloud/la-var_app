@@ -238,7 +238,7 @@ create table public.reports (
   reason public.report_reason not null,
   details text check (char_length(details) <= 1000),
   status text not null default 'open' check (status in ('open', 'actioned', 'dismissed')),
-  handled_by uuid references public.profiles (id),
+  handled_by uuid references public.profiles (id) on delete set null,
   handled_at timestamptz,
   decision_note text check (char_length(decision_note) <= 1000),
   created_at timestamptz not null default now()
@@ -248,7 +248,8 @@ create index reports_open_idx on public.reports (status, created_at);
 -- Journal des décisions : motif communiqué à l'auteur (exposé des motifs).
 create table public.moderation_actions (
   id uuid primary key default gen_random_uuid(),
-  moderator_id uuid not null references public.profiles (id),
+  -- Journal conservé si le compte du modérateur est supprimé (droit à l'effacement).
+  moderator_id uuid references public.profiles (id) on delete set null,
   target_type text not null check (target_type in ('post', 'comment', 'profile')),
   target_id uuid not null,
   action text not null check (action in ('hide', 'remove', 'restore', 'ban', 'unban', 'qualify')),
@@ -341,3 +342,10 @@ begin
   insert into public.rate_events (key) values (k);
   return true;
 end $$;
+
+-- Version appelable par les règles d'accès : la clé est TOUJOURS liée à
+-- l'utilisateur connecté, on ne peut donc consommer que son propre quota.
+create or replace function public.rate_ok_self(action text, max_count int, window_s int) returns boolean
+language sql security definer set search_path = public as $$
+  select auth.uid() is not null and public.rate_ok(action || ':' || auth.uid()::text, max_count, window_s)
+$$;

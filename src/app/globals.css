@@ -1,0 +1,326 @@
+@import "tailwindcss";
+
+/* ==========================================================================
+   LA VAR : système visuel dérivé du logo officiel
+   Noir profond, rouge du cadre (#C92526), blanc cassé des lettres
+   (#E7E5DF). Signature : le parallélogramme incliné du logo, réutilisé pour
+   les étiquettes de rubrique et l'action principale. Pas de dégradés
+   décoratifs : les couleurs viennent du logo, l'image vient des contenus.
+   ========================================================================== */
+
+@theme {
+  --color-ink: #000000;
+  --color-coal: #0d0d0d;
+  --color-panel: #151515;
+  --color-line: #262626;
+  --color-paper: #e7e5df;
+  --color-muted: #a3a19b; /* 7.6:1 sur noir */
+  --color-red: #c92526;
+  --color-red-hi: #e0393a;
+  --color-warn: #f5b83d;
+
+  --font-display: var(--font-barlow), "Arial Narrow", system-ui, sans-serif;
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+
+  --ease-snap: cubic-bezier(0.2, 0.9, 0.1, 1);
+}
+
+:root {
+  color-scheme: dark;
+  --nav-h: 62px;
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-t: env(safe-area-inset-top, 0px);
+}
+
+html,
+body {
+  background: var(--color-ink);
+  color: var(--color-paper);
+}
+body {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+}
+::selection {
+  background: var(--color-red);
+  color: #fff;
+}
+:focus-visible {
+  outline: 2px solid var(--color-red-hi);
+  outline-offset: 2px;
+}
+img,
+video {
+  display: block;
+  max-width: 100%;
+}
+
+/* ---------- Typographie : capitales inclinées comme le logo ---------- */
+.t-display {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-style: italic;
+  text-transform: uppercase;
+  letter-spacing: 0.005em;
+  line-height: 0.92;
+}
+.t-kicker {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-style: italic;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 13px;
+}
+.t-time {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--color-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Étiquette : le cadre du logo ---------- */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.18rem 0.6rem;
+  transform: skewX(-10deg);
+  border: 2px solid var(--color-red);
+  background: var(--color-ink);
+  color: var(--color-paper);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-style: italic;
+  text-transform: uppercase;
+  font-size: 12.5px;
+  letter-spacing: 0.04em;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+.tag > * {
+  transform: skewX(10deg);
+}
+.tag-solid {
+  background: var(--color-red);
+  color: #fff;
+}
+.tag-outline {
+  border-color: var(--color-paper);
+}
+.tag-warn {
+  border-color: var(--color-warn);
+  color: var(--color-warn);
+}
+.tag-muted {
+  border-color: var(--color-line);
+  color: var(--color-muted);
+}
+
+/* ---------- Boutons ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 46px;
+  padding: 0 1.2rem;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-style: italic;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 16px;
+  border-radius: 6px;
+  transition: transform 0.15s var(--ease-snap), background-color 0.15s, border-color 0.15s, color 0.15s;
+  cursor: pointer;
+  user-select: none;
+}
+.btn:active {
+  transform: scale(0.97);
+}
+.btn-red {
+  background: var(--color-red);
+  color: #fff;
+  border: 2px solid var(--color-red);
+}
+.btn-red:hover {
+  background: var(--color-red-hi);
+  border-color: var(--color-red-hi);
+}
+.btn-line {
+  border: 2px solid var(--color-paper);
+  color: var(--color-paper);
+}
+.btn-line:hover {
+  background: var(--color-paper);
+  color: var(--color-ink);
+}
+.btn-ghost {
+  color: var(--color-muted);
+}
+.btn-ghost:hover {
+  color: var(--color-paper);
+}
+.btn[disabled],
+.btn[aria-disabled="true"] {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+/* Filtres : pastilles plates, l'active prend le cadre rouge. */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 0.9rem;
+  border: 2px solid var(--color-line);
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 14px;
+  white-space: nowrap;
+  color: var(--color-paper);
+  transition: border-color 0.15s, background-color 0.15s;
+}
+.chip[aria-pressed="true"],
+.chip[aria-current="page"],
+.chip[aria-checked="true"] {
+  border-color: var(--color-red);
+  background: var(--color-red);
+  color: #fff;
+}
+
+.input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0.7rem 0.9rem;
+  border: 2px solid var(--color-line);
+  border-radius: 6px;
+  background: var(--color-coal);
+  color: var(--color-paper);
+  font-size: 16px; /* évite le zoom iOS */
+}
+.input:focus {
+  outline: none;
+  border-color: var(--color-red);
+}
+.input[aria-invalid="true"] {
+  border-color: var(--color-red-hi);
+}
+.input::placeholder {
+  color: #6c6a66;
+}
+
+/* Surface posée sur une vidéo : fond sombre dense, pas de verre décoratif. */
+.scrim {
+  background: rgba(0, 0, 0, 0.62);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+@media (prefers-reduced-transparency: reduce) {
+  .scrim {
+    background: rgba(0, 0, 0, 0.88);
+    backdrop-filter: none;
+  }
+}
+
+/* ---------- Fil vertical ---------- */
+.feed {
+  height: 100svh;
+  overflow-y: auto;
+  scroll-snap-type: y mandatory;
+  overscroll-behavior-y: contain;
+  scrollbar-width: none;
+}
+.feed::-webkit-scrollbar {
+  display: none;
+}
+.slide {
+  position: relative;
+  height: 100svh;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  overflow: hidden;
+  background: var(--color-ink);
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #151515 0%, #1f1f1f 50%, #151515 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s linear infinite;
+}
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* Panneau du bas (commentaires, menus) */
+.sheet {
+  animation: sheet-up 0.22s var(--ease-snap);
+}
+@keyframes sheet-up {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+}
+.pop {
+  animation: pop 0.3s var(--ease-snap);
+}
+@keyframes pop {
+  40% {
+    transform: scale(1.25);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.prose-lv h2 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-style: italic;
+  text-transform: uppercase;
+  font-size: 1.4rem;
+  margin: 2rem 0 0.5rem;
+}
+.prose-lv p,
+.prose-lv li {
+  color: #d4d2cc;
+  margin: 0.5rem 0;
+}
+.prose-lv ul {
+  list-style: disc;
+  padding-left: 1.2rem;
+}
+.prose-lv a {
+  text-decoration: underline;
+}
+.placeholder {
+  background: rgba(245, 184, 61, 0.15);
+  color: var(--color-warn);
+  padding: 0 0.3em;
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+.sr-only-focusable:not(:focus) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}

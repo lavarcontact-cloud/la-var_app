@@ -36,7 +36,7 @@ grant delete on public.posts to authenticated;
 create policy posts_read on public.posts for select
   using (status = 'published' or author_id = auth.uid() or public.is_staff('moderator'));
 create policy posts_insert on public.posts for insert to authenticated
-  with check (author_id = auth.uid() and public.rate_ok('post:' || auth.uid(), 20, 3600));
+  with check (author_id = auth.uid() and public.rate_ok_self('post', 20, 3600));
 create policy posts_update_own on public.posts for update to authenticated
   using (author_id = auth.uid() and status = 'published') with check (author_id = auth.uid());
 create policy posts_delete_own on public.posts for delete to authenticated
@@ -50,7 +50,7 @@ create policy comments_read on public.comments for select
   using ((status = 'published' and exists (select 1 from public.posts p where p.id = post_id and p.status = 'published'))
          or author_id = auth.uid() or public.is_staff('moderator'));
 create policy comments_insert on public.comments for insert to authenticated
-  with check (author_id = auth.uid() and public.rate_ok('comment:' || auth.uid(), 60, 3600));
+  with check (author_id = auth.uid() and public.rate_ok_self('comment', 60, 3600));
 create policy comments_delete on public.comments for delete to authenticated
   using (author_id = auth.uid());
 
@@ -61,7 +61,7 @@ grant select, insert, delete on public.likes, public.saves, public.follows to au
 grant select on public.likes, public.follows, public.saves to anon;
 create policy likes_read on public.likes for select using (true);
 create policy likes_write on public.likes for insert to authenticated
-  with check (user_id = auth.uid() and public.rate_ok('like:' || auth.uid(), 300, 3600));
+  with check (user_id = auth.uid() and public.rate_ok_self('like', 300, 3600));
 create policy likes_delete on public.likes for delete to authenticated using (user_id = auth.uid());
 -- Les enregistrements sont privés : chacun ne voit que les siens.
 create policy saves_read on public.saves for select to authenticated using (user_id = auth.uid());
@@ -69,14 +69,14 @@ create policy saves_write on public.saves for insert to authenticated with check
 create policy saves_delete on public.saves for delete to authenticated using (user_id = auth.uid());
 create policy follows_read on public.follows for select using (true);
 create policy follows_write on public.follows for insert to authenticated
-  with check (follower_id = auth.uid() and public.rate_ok('follow:' || auth.uid(), 200, 3600));
+  with check (follower_id = auth.uid() and public.rate_ok_self('follow', 200, 3600));
 create policy follows_delete on public.follows for delete to authenticated using (follower_id = auth.uid());
 
 -- ---------- Signalements ----------
 grant insert (target_type, target_id, reason, details) on public.reports to authenticated;
 grant select on public.reports to authenticated;
 create policy reports_insert on public.reports for insert to authenticated
-  with check (reporter_id = auth.uid() and public.rate_ok('report:' || auth.uid(), 30, 3600));
+  with check (reporter_id = auth.uid() and public.rate_ok_self('report', 30, 3600));
 create policy reports_read on public.reports for select to authenticated
   using (reporter_id = auth.uid() or public.is_staff('moderator'));
 
@@ -262,10 +262,19 @@ begin
     returning id into rid;
   return rid;
 end $$;
-grant execute on function public.submit_quote to anon, authenticated;
 
 -- Fonctions utilitaires appelées par les politiques.
-grant execute on function public.is_staff, public.is_banned, public.rate_ok, public.current_role_of to anon, authenticated;
+-- Droits finaux sur les fonctions : on retire tout (y compris les droits par
+-- défaut accordés aux fonctions créées plus haut), puis on accorde au cas par cas.
+revoke execute on all functions in schema public from public, anon, authenticated;
+grant execute on function public.is_staff, public.is_banned, public.current_role_of to anon, authenticated;
+grant execute on function public.rate_ok_self to authenticated;
+grant execute on function public.get_feed to anon, authenticated;
+-- Devis : uniquement via la route serveur /api/quote (clé de service), qui
+-- fournit une empreinte d'IP non falsifiable par le navigateur.
+grant execute on function public.submit_quote to service_role;
+grant execute on function public.moderate, public.dismiss_report, public.qualify_post, public.set_role,
+  public.update_service, public.upsert_source, public.hide_external_item to authenticated;
 
 -- =====================================================================
 -- Stockage : un seau public en lecture (les publications sont publiques),

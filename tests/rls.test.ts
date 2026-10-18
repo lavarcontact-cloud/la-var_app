@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { anon, sql, user } from "./local-stack";
+import { admin, anon, cleanup, sql, user } from "./local-stack";
 
 type U = Awaited<ReturnType<typeof user>>;
 let a: U, b: U, mod: U, editor: U, adminU: U, artist: U;
@@ -10,6 +10,8 @@ beforeAll(async () => {
   ]);
 });
 afterAll(async () => {
+  await cleanup();
+  await sql`delete from public.quote_requests where email in ('label@example.com', 's@example.com')`;
   await sql.end();
 });
 
@@ -153,6 +155,30 @@ describe("modération et signalements", () => {
   });
 });
 
+describe("fonctions internes", () => {
+  it("le compteur anti-spam n'est pas appelable directement (impossible d'épuiser le quota d'un autre)", async () => {
+    expect((await anon().rpc("rate_ok", { k: `post:${a.id}`, max_count: 0, window_s: 3600 })).error).not.toBeNull();
+    expect((await b.client.rpc("rate_ok", { k: `post:${a.id}`, max_count: 0, window_s: 3600 })).error).not.toBeNull();
+  });
+  it("les fonctions d'administration sont fermées aux visiteurs", async () => {
+    for (const fn of ["moderate", "qualify_post", "set_role", "update_service", "upsert_source", "upsert_work", "find_profile"]) {
+      expect((await anon().rpc(fn, {})).error, fn).not.toBeNull();
+    }
+  });
+});
+
+describe("droit à l'effacement", () => {
+  it("un compte de modérateur peut être supprimé, le journal des décisions est conservé", async () => {
+    const m2 = await user("modo2", "moderator");
+    const p = await post(a);
+    await m2.client.rpc("moderate", { p_target_type: "post", p_target_id: p.id, p_action: "hide", p_reason: "Test effacement" });
+    const { error } = await admin.auth.admin.deleteUser(m2.id);
+    expect(error).toBeNull();
+    const [log] = await sql`select moderator_id, reason from public.moderation_actions where target_id = ${p.id}`;
+    expect(log).toMatchObject({ moderator_id: null, reason: "Test effacement" });
+  });
+});
+
 describe("profils et rôles", () => {
   it("impossible de s'attribuer un rôle ou un badge", async () => {
     const { error } = await a.client.from("profiles").update({ role: "admin" }).eq("id", a.id);
@@ -168,9 +194,11 @@ describe("profils et rôles", () => {
 });
 
 describe("studio", () => {
-  it("demande de devis : enregistrée pour un visiteur, lisible par l'admin seul", async () => {
+  it("demande de devis : appel direct refusé aux visiteurs, enregistrée via le serveur, lisible par l'admin seul", async () => {
     const v = anon();
-    const { data: id, error } = await v.rpc("submit_quote", { p_service: "clip", p_name: "Label Test", p_email: "label@example.com", p_phone: "", p_message: "Un clip pour notre artiste, tournage en décembre.", p_budget: "", p_date: "", p_client_key: "test-" + Date.now() });
+    const args = { p_service: "clip", p_name: "Label Test", p_email: "label@example.com", p_phone: "", p_message: "Un clip pour notre artiste, tournage en décembre.", p_budget: "", p_date: "", p_client_key: "test-" + Date.now() };
+    expect((await v.rpc("submit_quote", args)).error).not.toBeNull();
+    const { data: id, error } = await admin.rpc("submit_quote", args); // = route serveur /api/quote
     expect(error).toBeNull();
     expect(id).toMatch(/^[0-9a-f-]{36}$/);
     expect((await v.from("quote_requests").select("id")).data ?? []).toHaveLength(0);
@@ -178,8 +206,15 @@ describe("studio", () => {
     expect((await adminU.client.from("quote_requests").select("id").eq("id", id)).data ?? []).toHaveLength(1);
   });
   it("un devis invalide est refusé (pas de faux succès)", async () => {
-    const { error } = await anon().rpc("submit_quote", { p_service: "clip", p_name: "X", p_email: "pas-un-mail", p_phone: "", p_message: "court", p_budget: "", p_date: "", p_client_key: "k" + Date.now() });
+    const { error } = await admin.rpc("submit_quote", { p_service: "clip", p_name: "X", p_email: "pas-un-mail", p_phone: "", p_message: "court", p_budget: "", p_date: "", p_client_key: "k" + Date.now() });
     expect(error).not.toBeNull();
+  });
+  it("devis : 5 par heure et par empreinte d'IP", async () => {
+    const key = "ip-" + Date.now();
+    const args = { p_service: "", p_name: "Spam", p_email: "s@example.com", p_phone: "", p_message: "Message suffisamment long pour passer.", p_budget: "", p_date: "", p_client_key: key };
+    const results = [];
+    for (let i = 0; i < 6; i++) results.push(!(await admin.rpc("submit_quote", args)).error);
+    expect(results).toEqual([true, true, true, true, true, false]);
   });
   it("seul un administrateur modifie un tarif", async () => {
     const args = { p_slug: "photographie", p_title: "Photographie", p_description: "Portraits, presse, plateau.", p_price_cents: 30000, p_price_label: "À partir de", p_terms: "", p_active: true };
